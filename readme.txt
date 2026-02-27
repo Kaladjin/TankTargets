@@ -7,6 +7,8 @@ Téléchargez le dossier TankTargets.
 
 Placez-le dans votre dossier Interface/AddOns/.
 
+!!!!!!!!!!!!--------Rennomez le dossier en TankTargets--------!!!!!!!!!!!!!
+
 Relancez votre jeu.
 
 🕹️ Commandes Slash
@@ -53,5 +55,6 @@ Bordure ROUGE : Attention ! Le monstre ne cible pas le tank (il tape sûrement u
 Les réglages de position et de taille sont sauvegardés pour tout votre compte (communs à tous vos persos).
 
 La liste des tanks est propre à chaque personnage pour plus de flexibilité.
+
 
 Amusez-vous bien en raid ! ⚔️
