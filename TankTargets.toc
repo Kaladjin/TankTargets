@@ -1,0 +1,10 @@
+## Interface: 11200
+## Title: TankTargets
+## Version: 1.0
+## Notes: Gestion des cibles des tanks pour Raid (Style pfUI)
+## Author: Kaladjin
+## IconTexture: Interface\AddOns\TankTargets\TankTargets
+## SavedVariables: TankScale, TankFramePos
+## SavedVariablesPerCharacter: TankList, TankCount, TankTargetsLocked
+Bindings.xml
+TankTargets.lua

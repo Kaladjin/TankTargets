@@ -1,0 +1,14 @@
+<Bindings>
+	<Binding name="TANKTARGET1" header="TANKTARGETS">
+		TankTargets_Target(1);
+	</Binding>
+	<Binding name="TANKTARGET2">
+		TankTargets_Target(2);
+	</Binding>
+	<Binding name="TANKTARGET3">
+		TankTargets_Target(3);
+	</Binding>
+	<Binding name="TANKTARGET4">
+		TankTargets_Target(4);
+	</Binding>
+</Bindings>
