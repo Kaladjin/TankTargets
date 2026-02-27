@@ -7,6 +7,8 @@ Téléchargez le dossier TankTargets.
 
 Placez-le dans votre dossier Interface/AddOns/.
 
+!!!!!!!!!!!!--------Rennomez le dossier en TankTargets--------!!!!!!!!!!!!!
+
 Relancez votre jeu.
 
 🕹️ Commandes Slash
