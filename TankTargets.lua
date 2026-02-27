@@ -66,11 +66,20 @@ local function FillMenu(slotID)
         b:SetFontString(bt)
         b:SetText(pName)
         b:Show()
+        
         b:SetScript("OnClick", function()
             local n = this:GetText()
             for name, slot in pairs(TankList) do if slot == currentSlot then TankList[name] = nil end end
             if n ~= "Vider" then TankList[n] = currentSlot end
             menu:Hide()
+            
+            -- ENVOI DE LA SYNCHRONISATION AU GROUPE/RAID
+            local msg = "SET:"..currentSlot..":"..(n == "Vider" and "NONE" or n)
+            if GetNumRaidMembers() > 0 then
+                SendAddonMessage("TT_SYNC", msg, "RAID")
+            elseif GetNumPartyMembers() > 0 then
+                SendAddonMessage("TT_SYNC", msg, "PARTY")
+            end
         end)
     end
     menu:SetHeight(pCount * 18 + 10)
@@ -110,7 +119,17 @@ for i=1, 4 do
         f.btnNb:SetWidth(16) f.btnNb:SetHeight(16) f.btnNb:SetPoint("LEFT", f.btnS, "RIGHT", 2, 0)
         f.nbDisplay = f.btnNb:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         f.nbDisplay:SetAllPoints()
-        f.btnNb:SetScript("OnClick", function() TankCount = (TankCount >= 4) and 1 or TankCount + 1 end)
+        f.btnNb:SetScript("OnClick", function() 
+            TankCount = (TankCount >= 4) and 1 or TankCount + 1 
+            
+            -- ENVOI DU NOMBRE DE TANKS
+            local msg = "COUNT:"..TankCount
+            if GetNumRaidMembers() > 0 then
+                SendAddonMessage("TT_SYNC", msg, "RAID")
+            elseif GetNumPartyMembers() > 0 then
+                SendAddonMessage("TT_SYNC", msg, "PARTY")
+            end
+        end)
         
         f.btnLock = CreateFrame("Button", nil, f)
         f.btnLock:SetWidth(16) f.btnLock:SetHeight(16) f.btnLock:SetPoint("TOPRIGHT", -5, -5)
@@ -169,8 +188,12 @@ updater:SetScript("OnUpdate", function()
             -- Condition d'affichage : Seulement si en groupe/raid
             if (numRaid > 0 or numParty > 0 or TankTestMode) and i <= TankCount then
                 f:Show()
+                
+                -- CORRECTION : Affichage correct du S pour tous les slots
                 if isLeader then f.btnS:Show() else f.btnS:Hide() end
-                if i == 1 and isLeader then f.btnNb:Show() else f.btnS:Hide() end -- Correction ici
+                if i == 1 then
+                    if isLeader then f.btnNb:Show() else f.btnNb:Hide() end
+                end
 
                 local name = nil
                 for n, s in pairs(TankList) do if s == i then name = n end end
@@ -225,16 +248,36 @@ updater:SetScript("OnUpdate", function()
     end
 end)
 
--- 5. Gestionnaire d'événements pour vider la liste au départ
+-- 5. Gestionnaire d'événements pour la synchronisation réseau
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
 eventFrame:RegisterEvent("RAID_ROSTER_UPDATE")
+eventFrame:RegisterEvent("CHAT_MSG_ADDON") -- On écoute les messages secrets des addons
 
 eventFrame:SetScript("OnEvent", function()
-    if GetNumRaidMembers() == 0 and GetNumPartyMembers() == 0 then
-        TankList = {} -- On vide les tanks quand on est seul
+    if event == "CHAT_MSG_ADDON" then
+        if arg1 == "TT_SYNC" then
+            -- On analyse le message reçu par les autres joueurs
+            local _, _, action, val1, val2 = string.find(arg2, "^(%w+):([^:]+):?(.*)$")
+            if action == "SET" then
+                local slot = tonumber(val1)
+                local tName = val2
+                if slot then
+                    for k, v in pairs(TankList) do if v == slot then TankList[k] = nil end end
+                    if tName ~= "NONE" then TankList[tName] = slot end
+                end
+            elseif action == "COUNT" then
+                local count = tonumber(val1)
+                if count then TankCount = count end
+            end
+        end
+    elseif event == "PARTY_MEMBERS_CHANGED" or event == "RAID_ROSTER_UPDATE" then
+        if GetNumRaidMembers() == 0 and GetNumPartyMembers() == 0 then
+            TankList = {} -- On vide les tanks quand on est seul
+        end
     end
 end)
+
 -- 6. Commandes Slash
 SLASH_TANKTARGETS1 = "/tt"
 SlashCmdList["TANKTARGETS"] = function(msg)
@@ -259,8 +302,6 @@ SlashCmdList["TANKTARGETS"] = function(msg)
     end
 end
 -- 7. Déclaration des Raccourcis Clavier (Keybindings)
--- On définit uniquement les noms pour l'affichage du menu.
--- Le lien avec les fonctions se fait via le fichier Bindings.xml
 BINDING_HEADER_TANKTARGETS = "TankTargets"
 BINDING_NAME_TANKTARGET1 = "Assister Tank 1"
 BINDING_NAME_TANKTARGET2 = "Assister Tank 2"
