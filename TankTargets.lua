@@ -5,7 +5,7 @@ TankTargetsLocked = TankTargetsLocked or false
 TankScale = TankScale or 1.0
 TankFramePos = TankFramePos or { x = 0, y = 105 }
 TankOrientation = TankOrientation or "VERTICAL"
-TankOptionsPos = TankOptionsPos or nil -- NOUVEAU : Sauvegarde de la position des options
+TankOptionsPos = TankOptionsPos or nil
 
 local frames = {}
 local timer = 0
@@ -77,10 +77,7 @@ local function FillMenu(slotID)
             for name, slot in pairs(TankList) do if slot == currentSlot then TankList[name] = nil end end
             if n ~= "Vider" and n ~= nil then TankList[n] = currentSlot end
             menu:Hide()
-            
-            local msg = "SET:"..currentSlot..":"..(n == "Vider" and "NONE" or n)
-            if GetNumRaidMembers() > 0 then SendAddonMessage("TT_SYNC", msg, "RAID")
-            elseif GetNumPartyMembers() > 0 then SendAddonMessage("TT_SYNC", msg, "PARTY") end
+            -- SYNCHRO SUPPRIMÉE ICI
         end)
     end
     menu:SetHeight(pCount * 18 + 10)
@@ -131,9 +128,7 @@ for i=1, 4 do
         f.nbDisplay:SetAllPoints()
         f.btnNb:SetScript("OnClick", function() 
             TankCount = (TankCount >= 4) and 1 or TankCount + 1 
-            local msg = "COUNT:"..TankCount
-            if GetNumRaidMembers() > 0 then SendAddonMessage("TT_SYNC", msg, "RAID")
-            elseif GetNumPartyMembers() > 0 then SendAddonMessage("TT_SYNC", msg, "PARTY") end
+            -- SYNCHRO SUPPRIMÉE ICI
         end)
         
         f.btnLock = CreateFrame("Button", nil, f)
@@ -155,7 +150,6 @@ for i=1, 4 do
             if TankOptionsFrame:IsShown() then 
                 TankOptionsFrame:Hide() 
             else 
-                -- Si aucune position n'est sauvegardée, on la place au-dessus de la barre
                 if not TankOptionsPos then
                     TankOptionsFrame:ClearAllPoints()
                     local scaledWidth = 144 * TankScale
@@ -185,7 +179,7 @@ for i=1, 4 do
     frames[i] = f
 end
 
--- 4. Cadre d'Options (Déplaçable et Sauvegarde sa position)
+-- 4. Cadre d'Options
 local opt = CreateFrame("Frame", "TankOptionsFrame", UIParent)
 opt:SetWidth(150) opt:SetHeight(90)
 opt:SetBackdrop({bgFile = "Interface\\ChatFrame\\ChatFrameBackground", edgeFile = "Interface\\ChatFrame\\ChatFrameBackground", edgeSize = 1})
@@ -197,12 +191,10 @@ opt:RegisterForDrag("LeftButton")
 opt:SetScript("OnDragStart", function() this:StartMoving() end)
 opt:SetScript("OnDragStop", function() 
     this:StopMovingOrSizing() 
-    -- NOUVEAU : Sauvegarde de la position lors du glisser-déposer
     local point, _, relativePoint, x, y = this:GetPoint()
     TankOptionsPos = { p = point, rp = relativePoint, x = x, y = y }
 end)
 
--- Si une position est déjà enregistrée, on l'applique au chargement
 if TankOptionsPos then
     opt:SetPoint(TankOptionsPos.p, UIParent, TankOptionsPos.rp, TankOptionsPos.x, TankOptionsPos.y)
 end
@@ -234,7 +226,6 @@ sSize:SetScript("OnValueChanged", function()
     end
 end)
 
--- Fonction utilitaire
 local function CreateDarkButton(name, parent, width, height, anchorPoint, anchorTo, anchorPoint2, x, y)
     local btn = CreateFrame("Button", name, parent)
     btn:SetWidth(width) btn:SetHeight(height) btn:SetPoint(anchorPoint, anchorTo, anchorPoint2, x, y)
@@ -250,7 +241,6 @@ local function CreateDarkButton(name, parent, width, height, anchorPoint, anchor
     return btn
 end
 
--- Bouton Orientation
 local bOrient = CreateDarkButton(nil, opt, 130, 20, "TOP", sSize, "BOTTOM", 0, -10)
 local function UpdateOrientText()
     bOrient:SetText("Sens: "..TankOrientation)
@@ -337,26 +327,14 @@ updater:SetScript("OnUpdate", function()
     end
 end)
 
--- 6. Synchronisation et Events
+-- 6. Events simplifiés (plus d'écoute de synchro)
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
 eventFrame:RegisterEvent("RAID_ROSTER_UPDATE")
-eventFrame:RegisterEvent("CHAT_MSG_ADDON")
 
 eventFrame:SetScript("OnEvent", function()
-    if event == "CHAT_MSG_ADDON" and arg1 == "TT_SYNC" then
-        local _, _, action, val1, val2 = string.find(arg2, "^(%w+):([^:]+):?(.*)$")
-        if action == "SET" then
-            local slot = tonumber(val1)
-            if slot then
-                for k, v in pairs(TankList) do if v == slot then TankList[k] = nil end end
-                if val2 ~= "NONE" then TankList[val2] = slot end
-            end
-        elseif action == "COUNT" then
-            local count = tonumber(val1)
-            if count then TankCount = count end
-        end
-    elseif (event == "PARTY_MEMBERS_CHANGED" or event == "RAID_ROSTER_UPDATE") and GetNumRaidMembers() == 0 and GetNumPartyMembers() == 0 then
+    -- On vide les cibles uniquement si on quitte le groupe/raid
+    if (event == "PARTY_MEMBERS_CHANGED" or event == "RAID_ROSTER_UPDATE") and GetNumRaidMembers() == 0 and GetNumPartyMembers() == 0 then
         TankList = {}
     end
 end)
@@ -372,7 +350,6 @@ SlashCmdList["TANKTARGETS"] = function(msg)
         TankFrame1:SetPoint("TOPLEFT", UIParent, "CENTER", 0, 0)
         TankFramePos = { x = 0, y = 0 }
         
-        -- NOUVEAU : Réinitialise aussi la fenêtre d'options
         TankOptionsPos = nil
         TankOptionsFrame:Hide()
         
