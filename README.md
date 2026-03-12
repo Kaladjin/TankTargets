@@ -12,13 +12,13 @@ Nouveau Menu d'Options (O) : Une fenêtre de configuration dédiée, détachable
 Sens d'affichage : Choisissez entre un alignement Vertical ou Horizontal pour intégrer parfaitement l'addon à votre UI.
 
 📥 Installation
-Téléchargez le dossier complet du projet.
-
-Assurez-vous que le dossier s'nomme exactement TankTargets (enlevez le -main si vous téléchargez l'archive depuis GitHub).
-
-Placez-le dans votre répertoire : World of Warcraft/Interface/AddOns/
-
-Relancez votre jeu.
+La méthode la plus simple pour installer et garder l'addon à jour :
+Ouvrez votre Turtle WoW Launcher.
+Cliquez sur l'onglet Addons.
+Cliquez sur le bouton Add new addon
+Copiez et collez l'URL de ce dépôt GitHub :
+https://github.com/Kaladjin/TankTargets
+Cliquez sur Install. Le launcher s'occupera de créer le dossier correctement.
 
 ⚙️ Interface et Boutons
 Sur la première barre de tank, vous trouverez plusieurs petits boutons de contrôle :
