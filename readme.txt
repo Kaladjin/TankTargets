@@ -1,60 +1,56 @@
-🛡️ Addon : TankTargets (v1.0)
-Cet addon permet de suivre en temps réel la cible des tanks du raid pour optimiser le focus DPS 
-et la gestion de l'aggro.
+🛡️ TankTargets (v1.0) pour WoW Classic 1.12
+TankTargets est un addon léger et épuré (style pfUI) conçu pour World of Warcraft Vanilla (1.12). Il permet de suivre en temps réel la cible des tanks de votre groupe ou raid, d'optimiser le focus DPS et de surveiller l'aggro d'un seul coup d'œil.
+
+(Pense à remplacer par le lien de ton GIF !)
+
+✨ Nouvelles Fonctionnalités & Améliorations
+Liberté totale : N'importe quel membre du groupe peut désormais assigner les tanks et régler le nombre de barres (les changements sont synchronisés avec les autres joueurs possédant l'addon).
+
+Nouveau Menu d'Options (O) : Une fenêtre de configuration dédiée, détachable et déplaçable.
+
+Échelle dynamique : Ajustez précisément la taille de l'interface de 0.5x à 2.0x grâce à un curseur (slider) fluide.
+
+Sens d'affichage : Choisissez entre un alignement Vertical ou Horizontal pour intégrer parfaitement l'addon à votre UI.
 
 📥 Installation
-Téléchargez le dossier TankTargets.
+Téléchargez le dossier complet du projet.
 
-Placez-le dans votre dossier Interface/AddOns/.
+Assurez-vous que le dossier s'nomme exactement TankTargets (enlevez le -main si vous téléchargez l'archive depuis GitHub).
 
-!!!!!!!!!!!!--------Rennomez le dossier en TankTargets--------!!!!!!!!!!!!!
+Placez-le dans votre répertoire : World of Warcraft/Interface/AddOns/
 
 Relancez votre jeu.
 
-🕹️ Commandes Slash
-/tt test : Affiche les cadres (mode démo) pour régler la position et la taille même 
-quand vous êtes seul.retaper la commande met fin au mode test
+⚙️ Interface et Boutons
+Sur la première barre de tank, vous trouverez plusieurs petits boutons de contrôle :
 
-/tt reset : Replace la fenêtre au centre de l'écran si vous l'avez perdue.
+S (Sélection) : Cliquez pour assigner un joueur de votre groupe/raid à cet emplacement.
 
-⚙️ Fonctionnalités & Utilisation
-S (Sélection) : (Réservé au Leader/Assistant) Cliquez sur le S bleu pour choisir 
-quel joueur assigner à cette barre de tank.
+Nb (Nombre) : Cliquez pour afficher entre 1 et 4 barres de tanks.
 
-Nb : (Réservé au Leader) Cliquez pour afficher entre 1 et 4 barres de tanks.
+O (Options) : Ouvre la fenêtre de configuration. Vous pouvez y régler la taille avec le curseur, changer le sens d'affichage (Vertical/Horizontal) et déplacer cette fenêtre où vous le souhaitez.
 
-Sz (Taille) : Cliquez pour changer l'échelle de l'interface (de 0.8x à 1.4x).
+U / L (Unlock/Lock) : * U (Rouge) : L'interface est déverrouillée, vous pouvez la déplacer à la souris.
 
-L/U (Lock/Unlock) :
+L (Vert) : L'interface est verrouillée à sa place.
 
-U (Rouge) : Fenêtre déverrouillée, vous pouvez la déplacer à la souris.
+🎯 Utilisation en Combat
+Ciblage rapide (Clic) : Cliquez n'importe où sur la barre d'un tank pour cibler automatiquement son monstre (Assist).
 
-L (Vert) : Fenêtre verrouillée.
+⚠️ Indicateur d'Aggro : * Bordure Noire : Tout va bien, la cible frappe actuellement le tank.
 
-Ciblage rapide : Cliquez n'importe où sur la barre d'un tank pour 
-cibler automatiquement son monstre.
+Bordure ROUGE : Alerte ! Le tank a perdu l'aggro, le monstre cible quelqu'un d'autre !
 
 ⌨️ Raccourcis Clavier (Keybindings)
+Vous pouvez configurer des touches pour assister les tanks instantanément, sans utiliser la souris :
 
-Vous pouvez configurer vos touches directement dans le jeu :
+Appuyez sur Échap -> Raccourcis.
 
-Appuyez sur Echap -> Raccourcis.
+Descendez tout en bas de la liste jusqu'à trouver la section TankTargets.
 
-Allez tout en bas de la liste jusqu'à trouver la section TankTargets.
+Assignez vos touches préférées (ex: F1, F2, F3, F4) aux actions "Assister Tank 1 à 4".
 
-Assignez vos touches préférées (ex: F1, F2, F3, F4) aux actions Assister Tank 1 à 4.
+🕹️ Commandes Slash
+/tt test : Active ou désactive le mode Test. Affiche de fausses barres pour vous permettre de régler la position et la taille même lorsque vous êtes seul.
 
-Désormais, une simple pression sur la touche ciblera instantanément le mob du tank correspondant !
-
-⚠️ Indicateur d'Aggro
-Bordure Noire : Tout va bien, la cible tape le tank.
-
-Bordure ROUGE : Attention ! Le monstre ne cible pas le tank (il tape sûrement un DPS ou un Healer).
-
-💾 Sauvegarde
-Les réglages de position et de taille sont sauvegardés pour tout votre compte (communs à tous vos persos).
-
-La liste des tanks est propre à chaque personnage pour plus de flexibilité.
-
-
-Amusez-vous bien en raid ! ⚔️
+/tt reset : Utile en cas de problème. Replace le cadre principal au centre de l'écran et réinitialise la position de la fenêtre d'options.

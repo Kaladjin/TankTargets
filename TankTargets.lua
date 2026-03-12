@@ -4,6 +4,8 @@ TankCount = TankCount or 1
 TankTargetsLocked = TankTargetsLocked or false
 TankScale = TankScale or 1.0
 TankFramePos = TankFramePos or { x = 0, y = 105 }
+TankOrientation = TankOrientation or "VERTICAL"
+TankOptionsPos = TankOptionsPos or nil -- NOUVEAU : Sauvegarde de la position des options
 
 local frames = {}
 local timer = 0
@@ -61,31 +63,30 @@ local function FillMenu(slotID)
         local pName = players[i]
         local b = getglobal("TankMenuBtn"..i) or CreateFrame("Button", "TankMenuBtn"..i, menu)
         b:SetWidth(110) b:SetHeight(16) b:SetPoint("TOPLEFT", 5, -5 - ((i-1)*18))
-        local bt = b:GetFontString() or b:CreateFontString(nil, "OVERLAY")
-        bt:SetFont("Fonts\\FRIZQT__.TTF", 10)
-        b:SetFontString(bt)
+        
+        local bt = b:GetFontString()
+        if not bt then
+            bt = b:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            b:SetFontString(bt)
+        end
         b:SetText(pName)
         b:Show()
         
         b:SetScript("OnClick", function()
             local n = this:GetText()
             for name, slot in pairs(TankList) do if slot == currentSlot then TankList[name] = nil end end
-            if n ~= "Vider" then TankList[n] = currentSlot end
+            if n ~= "Vider" and n ~= nil then TankList[n] = currentSlot end
             menu:Hide()
             
-            -- ENVOI DE LA SYNCHRONISATION AU GROUPE/RAID
             local msg = "SET:"..currentSlot..":"..(n == "Vider" and "NONE" or n)
-            if GetNumRaidMembers() > 0 then
-                SendAddonMessage("TT_SYNC", msg, "RAID")
-            elseif GetNumPartyMembers() > 0 then
-                SendAddonMessage("TT_SYNC", msg, "PARTY")
-            end
+            if GetNumRaidMembers() > 0 then SendAddonMessage("TT_SYNC", msg, "RAID")
+            elseif GetNumPartyMembers() > 0 then SendAddonMessage("TT_SYNC", msg, "PARTY") end
         end)
     end
     menu:SetHeight(pCount * 18 + 10)
 end
 
--- 3. Création des Frames
+-- 3. Création des Frames Principales
 for i=1, 4 do
     local f = CreateFrame("Frame", "TankFrame"..i, UIParent)
     f:SetWidth(144) f:SetHeight(44)
@@ -94,10 +95,19 @@ for i=1, 4 do
     f:SetBackdropColor(0, 0, 0, 0.6) f:SetBackdropBorderColor(0, 0, 0, 1)
     f:SetScale(TankScale)
     
-    if i == 1 then f:SetPoint("CENTER", UIParent, "CENTER", TankFramePos.x, TankFramePos.y)
-    else f:SetPoint("TOPLEFT", frames[i-1], "BOTTOMLEFT", 0, -6) end
+    if i == 1 then 
+        f:SetPoint("TOPLEFT", UIParent, "CENTER", TankFramePos.x, TankFramePos.y)
+    else 
+        if TankOrientation == "VERTICAL" then f:SetPoint("TOPLEFT", frames[i-1], "BOTTOMLEFT", 0, -6)
+        else f:SetPoint("TOPLEFT", frames[i-1], "TOPRIGHT", 6, 0) end
+    end
 
-    f:SetScript("OnDragStart", function() if not TankTargetsLocked then TankFrame1:StartMoving() end end)
+    f:SetScript("OnDragStart", function() 
+        if not TankTargetsLocked then 
+            TankFrame1:StartMoving() 
+            TankOptionsFrame:Hide() 
+        end 
+    end)
     f:SetScript("OnDragStop", function() 
         TankFrame1:StopMovingOrSizing()
         local _, _, _, x, y = TankFrame1:GetPoint()
@@ -121,14 +131,9 @@ for i=1, 4 do
         f.nbDisplay:SetAllPoints()
         f.btnNb:SetScript("OnClick", function() 
             TankCount = (TankCount >= 4) and 1 or TankCount + 1 
-            
-            -- ENVOI DU NOMBRE DE TANKS
             local msg = "COUNT:"..TankCount
-            if GetNumRaidMembers() > 0 then
-                SendAddonMessage("TT_SYNC", msg, "RAID")
-            elseif GetNumPartyMembers() > 0 then
-                SendAddonMessage("TT_SYNC", msg, "PARTY")
-            end
+            if GetNumRaidMembers() > 0 then SendAddonMessage("TT_SYNC", msg, "RAID")
+            elseif GetNumPartyMembers() > 0 then SendAddonMessage("TT_SYNC", msg, "PARTY") end
         end)
         
         f.btnLock = CreateFrame("Button", nil, f)
@@ -141,14 +146,23 @@ for i=1, 4 do
             f.lockTxt:SetText(TankTargetsLocked and "|cff00ff00L|r" or "|cffff0000U|r")
         end)
 
-        f.btnScale = CreateFrame("Button", nil, f)
-        f.btnScale:SetWidth(18) f.btnScale:SetHeight(16) f.btnScale:SetPoint("RIGHT", f.btnLock, "LEFT", -2, 0)
-        local tSz = f.btnScale:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        tSz:SetAllPoints() tSz:SetText("|cffffff00Sz|r")
-        f.btnScale:SetScript("OnClick", function()
-            TankScale = TankScale + 0.1
-            if TankScale > 1.45 then TankScale = 0.8 end
-            for k=1, 4 do frames[k]:SetScale(TankScale) end
+        f.btnOpt = CreateFrame("Button", nil, f)
+        f.btnOpt:SetWidth(18) f.btnOpt:SetHeight(16) f.btnOpt:SetPoint("RIGHT", f.btnLock, "LEFT", -2, 0)
+        local tOpt = f.btnOpt:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        tOpt:SetAllPoints() tOpt:SetText("|cffffff00O|r")
+        
+        f.btnOpt:SetScript("OnClick", function() 
+            if TankOptionsFrame:IsShown() then 
+                TankOptionsFrame:Hide() 
+            else 
+                -- Si aucune position n'est sauvegardée, on la place au-dessus de la barre
+                if not TankOptionsPos then
+                    TankOptionsFrame:ClearAllPoints()
+                    local scaledWidth = 144 * TankScale
+                    TankOptionsFrame:SetPoint("BOTTOM", UIParent, "CENTER", TankFramePos.x + (scaledWidth / 2), TankFramePos.y + 5)
+                end
+                TankOptionsFrame:Show() 
+            end 
         end)
     end
 
@@ -171,29 +185,104 @@ for i=1, 4 do
     frames[i] = f
 end
 
--- 4. Boucle de Mise à Jour
+-- 4. Cadre d'Options (Déplaçable et Sauvegarde sa position)
+local opt = CreateFrame("Frame", "TankOptionsFrame", UIParent)
+opt:SetWidth(150) opt:SetHeight(90)
+opt:SetBackdrop({bgFile = "Interface\\ChatFrame\\ChatFrameBackground", edgeFile = "Interface\\ChatFrame\\ChatFrameBackground", edgeSize = 1})
+opt:SetBackdropColor(0, 0, 0, 0.9) opt:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+
+opt:SetMovable(true)
+opt:EnableMouse(true)
+opt:RegisterForDrag("LeftButton")
+opt:SetScript("OnDragStart", function() this:StartMoving() end)
+opt:SetScript("OnDragStop", function() 
+    this:StopMovingOrSizing() 
+    -- NOUVEAU : Sauvegarde de la position lors du glisser-déposer
+    local point, _, relativePoint, x, y = this:GetPoint()
+    TankOptionsPos = { p = point, rp = relativePoint, x = x, y = y }
+end)
+
+-- Si une position est déjà enregistrée, on l'applique au chargement
+if TankOptionsPos then
+    opt:SetPoint(TankOptionsPos.p, UIParent, TankOptionsPos.rp, TankOptionsPos.x, TankOptionsPos.y)
+end
+
+opt:Hide()
+
+local ot = opt:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+ot:SetPoint("TOP", 0, -6) ot:SetText("Configuration")
+
+-- Le Slider
+local sSize = CreateFrame("Slider", "TankScaleSlider", opt, "OptionsSliderTemplate")
+sSize:SetWidth(120) 
+sSize:SetHeight(16)
+sSize:SetPoint("TOP", opt, "TOP", 0, -30)
+sSize:SetMinMaxValues(0.5, 2.0)
+sSize:SetValueStep(0.1)
+sSize:SetValue(TankScale)
+
+getglobal(sSize:GetName() .. "Low"):SetText("0.5")
+getglobal(sSize:GetName() .. "High"):SetText("2.0")
+getglobal(sSize:GetName() .. "Text"):SetText("Taille: "..string.format("%.1f", TankScale))
+
+sSize:SetScript("OnValueChanged", function()
+    local val = math.floor(this:GetValue() * 10 + 0.5) / 10
+    TankScale = val
+    getglobal(this:GetName() .. "Text"):SetText("Taille: "..string.format("%.1f", TankScale))
+    for k=1, 4 do 
+        frames[k]:SetScale(TankScale) 
+    end
+end)
+
+-- Fonction utilitaire
+local function CreateDarkButton(name, parent, width, height, anchorPoint, anchorTo, anchorPoint2, x, y)
+    local btn = CreateFrame("Button", name, parent)
+    btn:SetWidth(width) btn:SetHeight(height) btn:SetPoint(anchorPoint, anchorTo, anchorPoint2, x, y)
+    btn:SetBackdrop({bgFile = "Interface\\ChatFrame\\ChatFrameBackground", edgeFile = "Interface\\ChatFrame\\ChatFrameBackground", edgeSize = 1})
+    btn:SetBackdropColor(0.2, 0.2, 0.2, 0.9) btn:SetBackdropBorderColor(0, 0, 0, 1)
+    
+    btn:SetScript("OnEnter", function() this:SetBackdropColor(0.4, 0.4, 0.4, 0.9) end)
+    btn:SetScript("OnLeave", function() this:SetBackdropColor(0.2, 0.2, 0.2, 0.9) end)
+    
+    local txt = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    btn:SetFontString(txt)
+    
+    return btn
+end
+
+-- Bouton Orientation
+local bOrient = CreateDarkButton(nil, opt, 130, 20, "TOP", sSize, "BOTTOM", 0, -10)
+local function UpdateOrientText()
+    bOrient:SetText("Sens: "..TankOrientation)
+end
+UpdateOrientText()
+
+bOrient:SetScript("OnClick", function()
+    TankOrientation = (TankOrientation == "VERTICAL") and "HORIZONTAL" or "VERTICAL"
+    UpdateOrientText()
+    for i=2, 4 do
+        frames[i]:ClearAllPoints()
+        if TankOrientation == "VERTICAL" then frames[i]:SetPoint("TOPLEFT", frames[i-1], "BOTTOMLEFT", 0, -6)
+        else frames[i]:SetPoint("TOPLEFT", frames[i-1], "TOPRIGHT", 6, 0) end
+    end
+end)
+
+-- 5. Boucle de Mise à Jour
 local updater = CreateFrame("Frame")
 updater:SetScript("OnUpdate", function()
     timer = timer + arg1
     if timer > 0.15 then
         local numRaid = GetNumRaidMembers()
         local numParty = GetNumPartyMembers()
-        local isLeader = (IsRaidLeader() or IsPartyLeader() or (numRaid == 0 and numParty == 0))
         
         if frames[1].nbDisplay then frames[1].nbDisplay:SetText(TankCount) end
         
         for i=1, 4 do
             local f = frames[i]
-            
-            -- Condition d'affichage : Seulement si en groupe/raid
             if (numRaid > 0 or numParty > 0 or TankTestMode) and i <= TankCount then
                 f:Show()
-                
-                -- CORRECTION : Affichage correct du S pour tous les slots
-                if isLeader then f.btnS:Show() else f.btnS:Hide() end
-                if i == 1 then
-                    if isLeader then f.btnNb:Show() else f.btnNb:Hide() end
-                end
+                f.btnS:Show()
+                if i == 1 then f.btnNb:Show() end
 
                 local name = nil
                 for n, s in pairs(TankList) do if s == i then name = n end end
@@ -248,60 +337,52 @@ updater:SetScript("OnUpdate", function()
     end
 end)
 
--- 5. Gestionnaire d'événements pour la synchronisation réseau
+-- 6. Synchronisation et Events
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
 eventFrame:RegisterEvent("RAID_ROSTER_UPDATE")
-eventFrame:RegisterEvent("CHAT_MSG_ADDON") -- On écoute les messages secrets des addons
+eventFrame:RegisterEvent("CHAT_MSG_ADDON")
 
 eventFrame:SetScript("OnEvent", function()
-    if event == "CHAT_MSG_ADDON" then
-        if arg1 == "TT_SYNC" then
-            -- On analyse le message reçu par les autres joueurs
-            local _, _, action, val1, val2 = string.find(arg2, "^(%w+):([^:]+):?(.*)$")
-            if action == "SET" then
-                local slot = tonumber(val1)
-                local tName = val2
-                if slot then
-                    for k, v in pairs(TankList) do if v == slot then TankList[k] = nil end end
-                    if tName ~= "NONE" then TankList[tName] = slot end
-                end
-            elseif action == "COUNT" then
-                local count = tonumber(val1)
-                if count then TankCount = count end
+    if event == "CHAT_MSG_ADDON" and arg1 == "TT_SYNC" then
+        local _, _, action, val1, val2 = string.find(arg2, "^(%w+):([^:]+):?(.*)$")
+        if action == "SET" then
+            local slot = tonumber(val1)
+            if slot then
+                for k, v in pairs(TankList) do if v == slot then TankList[k] = nil end end
+                if val2 ~= "NONE" then TankList[val2] = slot end
             end
+        elseif action == "COUNT" then
+            local count = tonumber(val1)
+            if count then TankCount = count end
         end
-    elseif event == "PARTY_MEMBERS_CHANGED" or event == "RAID_ROSTER_UPDATE" then
-        if GetNumRaidMembers() == 0 and GetNumPartyMembers() == 0 then
-            TankList = {} -- On vide les tanks quand on est seul
-        end
+    elseif (event == "PARTY_MEMBERS_CHANGED" or event == "RAID_ROSTER_UPDATE") and GetNumRaidMembers() == 0 and GetNumPartyMembers() == 0 then
+        TankList = {}
     end
 end)
 
--- 6. Commandes Slash
+-- 7. Commandes Slash
 SLASH_TANKTARGETS1 = "/tt"
 SlashCmdList["TANKTARGETS"] = function(msg)
     if msg == "test" then
         TankTestMode = not TankTestMode
-        if TankTestMode then
-            DEFAULT_CHAT_FRAME:AddMessage("|cff00ccff[TankTarget]|r Mode Test : |cff00ff00ACTIVÉ|r")
-            for i=1, TankCount do frames[i]:Show() end
-        else
-            DEFAULT_CHAT_FRAME:AddMessage("|cff00ccff[TankTarget]|r Mode Test : |cffff0000DÉSACTIVÉ|r")
-            -- On laisse l'OnUpdate reprendre le contrôle pour cacher si solo
-        end
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ccff[TankTarget]|r Mode Test : "..(TankTestMode and "|cff00ff00ON|r" or "|cffff0000OFF|r"))
     elseif msg == "reset" then
         TankFrame1:ClearAllPoints()
-        TankFrame1:SetPoint("CENTER", UIParent, "CENTER", 0, 105)
-        TankFramePos = { x = 0, y = 105 }
-        DEFAULT_CHAT_FRAME:AddMessage("|cff00ccff[TankTarget]|r Position réinitialisée.")
+        TankFrame1:SetPoint("TOPLEFT", UIParent, "CENTER", 0, 0)
+        TankFramePos = { x = 0, y = 0 }
+        
+        -- NOUVEAU : Réinitialise aussi la fenêtre d'options
+        TankOptionsPos = nil
+        TankOptionsFrame:Hide()
+        
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ccff[TankTarget]|r Positions réinitialisées.")
     else
-        DEFAULT_CHAT_FRAME:AddMessage("|cff00ccff[TankTarget]|r Aide :")
-        DEFAULT_CHAT_FRAME:AddMessage(" - |cffffff00/tt test|r : Affiche/Cache les barres pour réglages.")
-        DEFAULT_CHAT_FRAME:AddMessage(" - |cffffff00/tt reset|r : Remet la fenêtre au centre de l'écran.")
+        DEFAULT_CHAT_FRAME:AddMessage("/tt test | /tt reset")
     end
 end
--- 7. Déclaration des Raccourcis Clavier (Keybindings)
+
+-- Raccourcis
 BINDING_HEADER_TANKTARGETS = "TankTargets"
 BINDING_NAME_TANKTARGET1 = "Assister Tank 1"
 BINDING_NAME_TANKTARGET2 = "Assister Tank 2"
